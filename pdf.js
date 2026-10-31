@@ -56,7 +56,7 @@ const Report = (() => {
     doc.setTextColor(...NAVY); doc.setFontSize(20); doc.setFont('helvetica', 'bold');
     doc.text(clean(ent.name), M, y);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); doc.setTextColor(...GREY);
-    const addr = [ent.address, ent.city].filter(Boolean).join(', ');
+    const addr = [ent.address, [ent.city, ent.zip].filter(Boolean).join(' ')].filter(Boolean).join(', ');
     const sub = [addr, ent.units ? `${ent.units} units` : '', isCon && ent.buildings ? `${ent.buildings} buildings` : ''].filter(Boolean).join('  |  ');
     if (sub) doc.text(clean(sub), M, y + 16);
     y += 34;

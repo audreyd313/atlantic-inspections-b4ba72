@@ -171,7 +171,8 @@ async function viewHome() {
     list.innerHTML = '';
     const q = S.q.trim().toLowerCase();
     const items = ents.filter(e => e.kind === S.tab && (!q || `${e.name} ${e.city || ''}`.toLowerCase().includes(q))).sort((a, b) => a.name.localeCompare(b.name));
-    if (!items.length) list.append(h('div', { class: 'empty' }, q ? 'No matches.' : S.tab === 'property' ? 'No properties yet. Tap “Add property” to get started.' : 'No construction projects yet. Tap “Add project”.'));
+    if (!items.length) list.append(h('div', { class: 'empty' }, q ? 'No matches.' : S.tab === 'property' ? 'No properties yet. Tap “Add property” to get started, or import your property list.' : 'No construction projects yet. Tap “Add project”.'));
+    if (!items.length && !q && S.tab === 'property') list.append(importButton());
     for (const e of items) {
       const done = (byEnt[e.id] || []).filter(i => i.status === 'complete').sort((a, b) => (b.fields.date || '').localeCompare(a.fields.date || ''));
       const last = done[0];
@@ -195,8 +196,11 @@ async function viewHome() {
 const ENTITY_FIELDS = {
   property: [
     { id: 'name', label: 'Property / site name (required)', type: 'text', required: true }, { id: 'address', label: 'Street address', type: 'text' },
-    { id: 'city', label: 'City, State', type: 'text' }, { id: 'units', label: 'Units', type: 'number' },
-    { id: 'yearBuilt', label: 'Year built', type: 'number' }, { id: 'manager', label: 'Property manager / mgmt co.', type: 'text' },
+    { id: 'city', label: 'City, State', type: 'text' }, { id: 'zip', label: 'ZIP', type: 'text' }, { id: 'units', label: 'Units', type: 'number' },
+    { id: 'bin', label: 'Property # (BIN)', type: 'text' }, { id: 'yearBuilt', label: 'Year built', type: 'number' },
+    { id: 'manager', label: 'Management company', type: 'text' }, { id: 'regional', label: 'Regional manager', type: 'text' },
+    { id: 'contact', label: 'Site contact', type: 'text' }, { id: 'phone', label: 'Office phone', type: 'tel' },
+    { id: 'email', label: 'Office email', type: 'email' },
     { id: 'owner', label: 'Ownership entity', type: 'text' }, { id: 'notes', label: 'Notes', type: 'textarea' }],
   project: [
     { id: 'name', label: 'Project / site name (required)', type: 'text', required: true }, { id: 'address', label: 'Site address', type: 'text' },
@@ -235,7 +239,13 @@ async function viewEntity(id) {
   const typeKey = e.kind === 'project' ? 'construction' : 'routine';
   if (e.sample) $view.append(h('div', { class: 'samplebar' }, 'SAMPLE DATA — created for testing'));
   const info = h('dl', { class: 'kv' });
-  for (const f of ENTITY_FIELDS[e.kind].slice(1)) if (e[f.id]) info.append(h('dt', {}, f.label), h('dd', {}, fmtVal(f, e[f.id])));
+  for (const f of ENTITY_FIELDS[e.kind].slice(1)) if (e[f.id] !== '' && e[f.id] != null) {
+    const v = fmtVal(f, e[f.id]);
+    const dd = f.type === 'tel' ? h('a', { href: 'tel:' + String(e[f.id]).replace(/[^\d+]/g, '') }, v)
+      : f.type === 'email' ? h('a', { href: 'mailto:' + e[f.id] }, v)
+      : f.id === 'address' ? h('a', { href: 'https://maps.apple.com/?q=' + encodeURIComponent([e.address, e.city, e.zip].filter(Boolean).join(', ')), target: '_blank', rel: 'noopener' }, v) : v;
+    info.append(h('dt', {}, f.label), h('dd', {}, dd));
+  }
   $view.append(h('div', { class: 'card' }, info.children.length ? info : h('div', { class: 'muted' }, 'No details yet.'),
     h('button', { class: 'btn secondary', style: 'min-height:44px;margin-top:12px', onclick: () => (location.hash = '#/edit/' + id) }, 'Edit details')));
   if (draft) $view.append(h('button', { class: 'btn teal', onclick: () => (location.hash = '#/i/' + draft.id) }, `Resume draft (${fmtDate(draft.fields.date)})`));
@@ -311,7 +321,7 @@ function fieldEl(f, get, set, opts = {}) {
     input = h('textarea', { oninput: e => doSet(e.target.value) }); input.value = get() ?? '';
   } else {
     const num = ['number', 'percent', 'currency'].includes(f.type);
-    input = h('input', { type: num ? 'number' : f.type === 'date' ? 'date' : 'text', inputmode: num ? (f.type === 'number' ? 'numeric' : 'decimal') : null,
+    input = h('input', { type: num ? 'number' : ['date', 'tel', 'email'].includes(f.type) ? f.type : 'text', inputmode: num ? (f.type === 'number' ? 'numeric' : 'decimal') : null,
       min: f.type === 'percent' ? 0 : null, max: f.type === 'percent' ? 100 : null, step: f.type === 'currency' ? '0.01' : 'any',
       placeholder: f.type === 'percent' ? '0–100' : f.type === 'currency' ? '$' : null, value: get() ?? '',
       oninput: e => doSet(num ? (e.target.value === '' ? '' : Number(e.target.value)) : e.target.value) });
@@ -632,6 +642,7 @@ async function viewSettings() {
   $view.append(card, h('button', { class: 'btn', onclick: save }, 'Save settings'));
 
   $view.append(h('h2', {}, 'Data'));
+  $view.append(importButton());
   $view.append(h('button', { class: 'btn secondary', onclick: async () => {
     const [ents, insps] = await Promise.all([DB.all('entities'), DB.all('inspections')]);
     const em = Object.fromEntries(ents.map(e => [e.id, e]));
@@ -640,7 +651,7 @@ async function viewSettings() {
     exportActionCsv(Object.values(latest).filter(i => em[i.entityId]).map(i => ({ insp: i, ent: em[i.entityId] })), `portfolio_open-action-items_${today()}.csv`);
   } }, 'Export portfolio action items (CSV)'));
   $view.append(h('button', { class: 'btn secondary', onclick: exportBackup }, 'Back up all data (JSON)'));
-  const imp = h('input', { type: 'file', accept: 'application/json', hidden: true, onchange: e => e.target.files[0] && importBackup(e.target.files[0]) });
+  const imp = h('input', { type: 'file', accept: '.json,application/json,text/plain', hidden: true, onchange: e => e.target.files[0] && importBackup(e.target.files[0]) });
   $view.append(imp, h('button', { class: 'btn secondary', onclick: () => imp.click() }, 'Restore from backup'));
   let est = '';
   if (navigator.storage?.estimate) { const e = await navigator.storage.estimate(); est = `Using ${(e.usage / 1048576).toFixed(1)} MB on this device.`; }
@@ -654,8 +665,38 @@ async function exportBackup() {
   for (const p of photos) ph.push({ ...p, blob: await blobToDataUrl(p.blob) });
   downloadBlob(new Blob([JSON.stringify({ app: 'property-inspections', version: 1, exportedAt: new Date().toISOString(), settings: SETTINGS, entities, inspections, photos: ph })], { type: 'application/json' }), `inspections-backup_${today()}.json`);
 }
+/* Import a property / project list. Merges: skips anything whose name already exists (case-insensitive). Never deletes. */
+function importButton() {
+  const inp = h('input', { type: 'file', accept: '.json,application/json,text/plain', hidden: true, id: 'importPropsInput', onchange: e => { const f = e.target.files[0]; e.target.value = ''; f && importProperties(f); } });
+  return h('div', {}, inp, h('button', { class: 'btn teal', id: 'importPropsBtn', onclick: () => inp.click() }, 'Import properties (list file)'));
+}
+const normName = s => String(s || '').replace(/\s+/g, ' ').trim().toLowerCase();
+async function importProperties(file) {
+  let data;
+  try { data = JSON.parse(await file.text()); } catch (e) { alert('That file isn’t a property list (could not read JSON).'); return; }
+  if (data.type !== 'property-import' || !Array.isArray(data.properties)) {
+    alert(data.app === 'property-inspections' ? 'That looks like a full backup. Use “Restore from backup” instead.' : 'That file isn’t a property list for this app.'); return;
+  }
+  const existing = new Set((await DB.all('entities')).map(e => (e.kind || 'property') + '|' + normName(e.name)));
+  const fields = new Set([...ENTITY_FIELDS.property, ...ENTITY_FIELDS.project].map(f => f.id));
+  let added = 0, skipped = 0, bad = 0, units = 0;
+  for (const p of data.properties) {
+    const name = String(p.name || '').replace(/\s+/g, ' ').trim();
+    const kind = p.kind === 'project' ? 'project' : 'property';
+    if (!name) { bad++; continue; }
+    const key = kind + '|' + normName(name);
+    if (existing.has(key)) { skipped++; continue; }
+    const e = { id: uid(), kind, name, createdAt: Date.now(), updatedAt: Date.now(), importedFrom: data.source || file.name };
+    for (const [k, v] of Object.entries(p)) if (fields.has(k) && k !== 'name' && v !== '' && v != null) e[k] = v;
+    await DB.put('entities', e); existing.add(key); added++; units += Number(e.units) || 0;
+  }
+  S.tab = 'property';
+  alert(`Imported ${added} ${added === 1 ? 'property' : 'properties'} (${units.toLocaleString('en-US')} units).` + (skipped ? ` Skipped ${skipped} already in the app.` : '') + (bad ? ` ${bad} rows had no name.` : ''));
+  location.hash = '#/'; route();
+}
 async function importBackup(file) {
   const data = JSON.parse(await file.text());
+  if (data.type === 'property-import') { importProperties(file); return; }
   if (data.app !== 'property-inspections') { toast('Not a backup file from this app'); return; }
   if (!confirm(`Restore ${data.entities.length} properties/projects and ${data.inspections.length} inspections? Matching records will be overwritten.`)) return;
   for (const e of data.entities) await DB.put('entities', e);

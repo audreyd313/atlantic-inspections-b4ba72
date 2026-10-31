@@ -115,3 +115,4 @@ details.sec[open]>summary{border-bottom:1px solid var(--line);background:#fafbfc
 [hidden]{display:none!important}
 .f:has(.seg){margin-bottom:18px}
 .brandlogo{height:40px;width:auto;flex:none;margin-left:4px}
+.kv dd a{color:var(--navy);text-decoration:underline;text-underline-offset:2px}
