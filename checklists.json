@@ -1,0 +1,993 @@
+{
+  "version": 1,
+  "company": "Atlantic Development",
+  "_readme": "Edit this file to change checklists. Section 'items' are rated 1-5 (or N/A) and feed the scores. 'fields' are plain form inputs. 'repeater' is a list of entries (units, buildings, capex items, open items). Field types: text, textarea, number, percent, currency, date, select, segmented. Keep ids unique and stable once you have saved inspections (ids link saved answers to items). Bump 'version' and the CACHE name in sw.js when you deploy changes. Segmented fields with \"sticky\": true can't be un-selected by tapping again. 'company' is the default report header name (Settings can override it).",
+  "rating": {
+    "min": 1,
+    "max": 5,
+    "labels": {
+      "1": "Poor",
+      "2": "Below standard",
+      "3": "Acceptable",
+      "4": "Good",
+      "5": "Excellent"
+    },
+    "bands": [
+      {
+        "min": 4.5,
+        "label": "Excellent",
+        "color": "#1f7a4d"
+      },
+      {
+        "min": 3.5,
+        "label": "Good",
+        "color": "#3b8a3e"
+      },
+      {
+        "min": 2.5,
+        "label": "Fair",
+        "color": "#b7791f"
+      },
+      {
+        "min": 0,
+        "label": "Needs attention",
+        "color": "#b42318"
+      }
+    ]
+  },
+  "owners": [
+    "Property Manager",
+    "Maintenance Supervisor",
+    "Regional Manager",
+    "Asset Manager",
+    "Leasing",
+    "Vendor",
+    "General Contractor",
+    "Development / PM",
+    "Architect",
+    "Owner"
+  ],
+  "types": {
+    "routine": {
+      "name": "Property Walk",
+      "reportTitle": "Property Walk Report",
+      "entityKind": "property",
+      "header": [
+        {
+          "id": "date",
+          "label": "Date",
+          "type": "date",
+          "required": true
+        },
+        {
+          "id": "inspector",
+          "label": "Inspector",
+          "type": "text"
+        },
+        {
+          "id": "accompanied",
+          "label": "Walked with (site staff)",
+          "type": "text"
+        },
+        {
+          "id": "weather",
+          "label": "Weather",
+          "type": "select",
+          "options": [
+            "Sunny",
+            "Partly cloudy",
+            "Overcast",
+            "Rain",
+            "Windy",
+            "Extreme heat",
+            "Cold / snow"
+          ]
+        },
+        {
+          "id": "temp",
+          "label": "Temp (°F)",
+          "type": "number"
+        },
+        {
+          "id": "occupancy",
+          "label": "Occupancy %",
+          "type": "percent",
+          "compare": true
+        },
+        {
+          "id": "leased",
+          "label": "Leased %",
+          "type": "percent",
+          "compare": true
+        },
+        {
+          "id": "unitsWalked",
+          "label": "Units walked",
+          "type": "number"
+        }
+      ],
+      "sections": [
+        {
+          "id": "curb",
+          "title": "Curb appeal & signage",
+          "items": [
+            {
+              "id": "curb_monument",
+              "label": "Monument / entry sign",
+              "hint": "Clean, lit, legible, landscaped"
+            },
+            {
+              "id": "curb_signage",
+              "label": "Directional & leasing signage / banners"
+            },
+            {
+              "id": "curb_entry",
+              "label": "Entry drive & first impression"
+            },
+            {
+              "id": "curb_litter",
+              "label": "Litter at entry & street frontage"
+            },
+            {
+              "id": "curb_color",
+              "label": "Entry landscaping & seasonal color"
+            },
+            {
+              "id": "curb_gate",
+              "label": "Entry gates / access control",
+              "hint": "N/A if not gated"
+            }
+          ]
+        },
+        {
+          "id": "leasing",
+          "title": "Leasing office & model",
+          "items": [
+            {
+              "id": "lo_exterior",
+              "label": "Office exterior & entry door"
+            },
+            {
+              "id": "lo_clean",
+              "label": "Interior cleanliness & odor"
+            },
+            {
+              "id": "lo_finishes",
+              "label": "Furniture, finishes & décor"
+            },
+            {
+              "id": "lo_restrooms",
+              "label": "Public restrooms"
+            },
+            {
+              "id": "lo_model",
+              "label": "Model / show unit readiness"
+            },
+            {
+              "id": "lo_tourpath",
+              "label": "Tour path condition"
+            },
+            {
+              "id": "lo_marketing",
+              "label": "Marketing collateral & specials displayed"
+            },
+            {
+              "id": "lo_staff",
+              "label": "Greeting & professionalism of staff"
+            }
+          ]
+        },
+        {
+          "id": "amenities",
+          "title": "Amenities",
+          "items": [
+            {
+              "id": "am_pool",
+              "label": "Pool & pool deck",
+              "hint": "Water clarity, furniture, gates, required signage, rescue equipment"
+            },
+            {
+              "id": "am_fitness",
+              "label": "Fitness center",
+              "hint": "Equipment working, clean, signage"
+            },
+            {
+              "id": "am_clubhouse",
+              "label": "Clubhouse / resident lounge"
+            },
+            {
+              "id": "am_dogpark",
+              "label": "Dog park & pet stations",
+              "hint": "Waste bags stocked, turf, gates"
+            },
+            {
+              "id": "am_play",
+              "label": "Playground"
+            },
+            {
+              "id": "am_package",
+              "label": "Package lockers / package room"
+            },
+            {
+              "id": "am_laundry",
+              "label": "Laundry facility"
+            },
+            {
+              "id": "am_grills",
+              "label": "Grills, picnic & outdoor gathering areas"
+            },
+            {
+              "id": "am_business",
+              "label": "Business center / co-working"
+            }
+          ]
+        },
+        {
+          "id": "grounds",
+          "title": "Grounds & landscaping",
+          "items": [
+            {
+              "id": "gr_turf",
+              "label": "Lawns / turf"
+            },
+            {
+              "id": "gr_shrubs",
+              "label": "Shrubs & trees trimmed, clear of buildings"
+            },
+            {
+              "id": "gr_beds",
+              "label": "Beds weeded, mulch / rock refreshed"
+            },
+            {
+              "id": "gr_irrigation",
+              "label": "Irrigation",
+              "hint": "Leaks, overspray, dry zones"
+            },
+            {
+              "id": "gr_drainage",
+              "label": "Drainage, ponding & erosion"
+            },
+            {
+              "id": "gr_trash",
+              "label": "Trash enclosures / compactor area"
+            },
+            {
+              "id": "gr_bulk",
+              "label": "Bulk trash / illegal dumping"
+            },
+            {
+              "id": "gr_pest",
+              "label": "Pest / rodent evidence",
+              "hint": "Higher score = no evidence"
+            }
+          ]
+        },
+        {
+          "id": "exteriors",
+          "title": "Building exteriors",
+          "items": [
+            {
+              "id": "ex_paint",
+              "label": "Paint & siding / stucco"
+            },
+            {
+              "id": "ex_roof",
+              "label": "Roofs (visible)",
+              "hint": "Missing shingles, tarps, damage"
+            },
+            {
+              "id": "ex_gutters",
+              "label": "Gutters & downspouts"
+            },
+            {
+              "id": "ex_stairs",
+              "label": "Stairs, landings & breezeways",
+              "hint": "Railings, treads, rot, rust"
+            },
+            {
+              "id": "ex_balconies",
+              "label": "Balconies / patios",
+              "hint": "Structure, clutter, prohibited items"
+            },
+            {
+              "id": "ex_windows",
+              "label": "Windows, doors & screens"
+            },
+            {
+              "id": "ex_foundation",
+              "label": "Foundations & concrete"
+            },
+            {
+              "id": "ex_numbers",
+              "label": "Building & unit numbers visible"
+            },
+            {
+              "id": "ex_lights",
+              "label": "Building-mounted light fixtures"
+            }
+          ]
+        },
+        {
+          "id": "parking",
+          "title": "Parking & lighting",
+          "items": [
+            {
+              "id": "pk_paving",
+              "label": "Asphalt / paving",
+              "hint": "Potholes, alligator cracking, sealcoat"
+            },
+            {
+              "id": "pk_striping",
+              "label": "Striping, ADA spaces & signage"
+            },
+            {
+              "id": "pk_lighting",
+              "label": "Site / pole lighting",
+              "hint": "Note outages in notes"
+            },
+            {
+              "id": "pk_carports",
+              "label": "Carports / garages"
+            },
+            {
+              "id": "pk_vehicles",
+              "label": "Abandoned / inoperable vehicles"
+            },
+            {
+              "id": "pk_sidewalks",
+              "label": "Sidewalks & curbs"
+            },
+            {
+              "id": "pk_tow",
+              "label": "Towing / parking enforcement signage"
+            }
+          ]
+        },
+        {
+          "id": "common",
+          "title": "Common areas & mail",
+          "items": [
+            {
+              "id": "ca_halls",
+              "label": "Interior corridors / hallways"
+            },
+            {
+              "id": "ca_mail",
+              "label": "Mail kiosk / mailroom"
+            },
+            {
+              "id": "ca_elevators",
+              "label": "Elevators",
+              "hint": "Operating, certificate current"
+            },
+            {
+              "id": "ca_trashrooms",
+              "label": "Trash rooms / chutes"
+            },
+            {
+              "id": "ca_flooring",
+              "label": "Common-area flooring & walls"
+            },
+            {
+              "id": "ca_boards",
+              "label": "Bulletin boards & resident notices"
+            }
+          ]
+        },
+        {
+          "id": "units",
+          "title": "Vacant, make-ready & down units",
+          "items": [
+            {
+              "id": "un_quality",
+              "label": "Make-ready quality (units walked)"
+            },
+            {
+              "id": "un_pace",
+              "label": "Turn pace / make-ready backlog"
+            },
+            {
+              "id": "un_down",
+              "label": "Down unit management",
+              "hint": "Plan and timeline for each down unit"
+            }
+          ],
+          "repeater": {
+            "id": "unitList",
+            "label": "Units walked",
+            "addLabel": "Add unit",
+            "titleField": "unit",
+            "fields": [
+              {
+                "id": "unit",
+                "label": "Unit #",
+                "type": "text"
+              },
+              {
+                "id": "plan",
+                "label": "Floor plan",
+                "type": "text"
+              },
+              {
+                "id": "status",
+                "label": "Status",
+                "type": "select",
+                "options": [
+                  "Vacant – ready",
+                  "Vacant – make-ready in progress",
+                  "Vacant – not started",
+                  "Down – maintenance",
+                  "Down – capital / renovation",
+                  "Model / office",
+                  "Occupied (walked)"
+                ]
+              },
+              {
+                "id": "days",
+                "label": "Days vacant / down",
+                "type": "number"
+              },
+              {
+                "id": "notes",
+                "label": "Condition / issues",
+                "type": "textarea"
+              }
+            ]
+          }
+        },
+        {
+          "id": "capex",
+          "title": "Deferred maintenance & capex",
+          "items": [
+            {
+              "id": "cx_overall",
+              "label": "Overall level of deferred maintenance",
+              "hint": "5 = none, 1 = significant"
+            }
+          ],
+          "repeater": {
+            "id": "capexList",
+            "label": "Capex / deferred maintenance needs",
+            "addLabel": "Add capex need",
+            "titleField": "item",
+            "fields": [
+              {
+                "id": "item",
+                "label": "Item",
+                "type": "text"
+              },
+              {
+                "id": "category",
+                "label": "Category",
+                "type": "select",
+                "options": [
+                  "Roofs",
+                  "Paving / concrete",
+                  "Paint / siding",
+                  "Stairs / balconies",
+                  "HVAC",
+                  "Plumbing",
+                  "Electrical / lighting",
+                  "Amenities",
+                  "Unit interiors",
+                  "Life safety",
+                  "Landscaping",
+                  "Other"
+                ]
+              },
+              {
+                "id": "timing",
+                "label": "Timing",
+                "type": "select",
+                "options": [
+                  "Immediate",
+                  "Within 12 months",
+                  "1–3 years",
+                  "3–5 years"
+                ]
+              },
+              {
+                "id": "cost",
+                "label": "Est. cost ($)",
+                "type": "currency"
+              },
+              {
+                "id": "notes",
+                "label": "Notes",
+                "type": "textarea"
+              }
+            ]
+          }
+        },
+        {
+          "id": "safety",
+          "title": "Life safety",
+          "items": [
+            {
+              "id": "ls_extinguishers",
+              "label": "Fire extinguishers",
+              "hint": "Charged, tagged within 12 months, accessible"
+            },
+            {
+              "id": "ls_fire",
+              "label": "Fire alarm panel & sprinkler risers",
+              "hint": "No trouble lights, clear access"
+            },
+            {
+              "id": "ls_detectors",
+              "label": "Smoke / CO detectors (vacant units)"
+            },
+            {
+              "id": "ls_trip",
+              "label": "Trip hazards",
+              "hint": "Sidewalks, stairs, hoses, raised concrete"
+            },
+            {
+              "id": "ls_fencing",
+              "label": "Fencing & gates",
+              "hint": "Pool gates self-closing & latching"
+            },
+            {
+              "id": "ls_security",
+              "label": "Security lighting & access"
+            },
+            {
+              "id": "ls_hazmat",
+              "label": "Chemical / hazmat storage (shop, pool)"
+            },
+            {
+              "id": "ls_exits",
+              "label": "Exit signs & emergency lighting"
+            },
+            {
+              "id": "ls_firelanes",
+              "label": "Fire lanes clear & marked"
+            }
+          ]
+        },
+        {
+          "id": "ops",
+          "title": "Staff & operations",
+          "fields": [
+            {
+              "id": "staffOnSite",
+              "label": "Staff on site",
+              "type": "number"
+            },
+            {
+              "id": "staffMet",
+              "label": "Staff met",
+              "type": "text"
+            },
+            {
+              "id": "traffic",
+              "label": "Walk-in / curb traffic observed",
+              "type": "segmented",
+              "options": [
+                "None",
+                "Low",
+                "Moderate",
+                "High"
+              ]
+            },
+            {
+              "id": "tours",
+              "label": "Tours during visit",
+              "type": "number"
+            },
+            {
+              "id": "specials",
+              "label": "Current concessions / specials",
+              "type": "text"
+            },
+            {
+              "id": "competitors",
+              "label": "Competitor notes",
+              "type": "textarea"
+            },
+            {
+              "id": "opsNotes",
+              "label": "General observations",
+              "type": "textarea"
+            }
+          ],
+          "items": [
+            {
+              "id": "op_staff",
+              "label": "Staff knowledge & responsiveness"
+            },
+            {
+              "id": "op_shop",
+              "label": "Maintenance shop organization & inventory"
+            },
+            {
+              "id": "op_workorders",
+              "label": "Work order backlog"
+            },
+            {
+              "id": "op_residents",
+              "label": "Resident sentiment / online reviews"
+            }
+          ]
+        }
+      ]
+    },
+    "construction": {
+      "name": "Construction Site Visit",
+      "reportTitle": "Construction Site Visit Report",
+      "entityKind": "project",
+      "header": [
+        {
+          "id": "date",
+          "label": "Date",
+          "type": "date",
+          "required": true
+        },
+        {
+          "id": "inspector",
+          "label": "Inspector",
+          "type": "text"
+        },
+        {
+          "id": "weather",
+          "label": "Weather",
+          "type": "select",
+          "options": [
+            "Sunny",
+            "Partly cloudy",
+            "Overcast",
+            "Rain",
+            "Windy",
+            "Extreme heat",
+            "Cold / snow"
+          ]
+        },
+        {
+          "id": "temp",
+          "label": "Temp (°F)",
+          "type": "number"
+        },
+        {
+          "id": "gc",
+          "label": "General contractor",
+          "type": "text",
+          "carry": true
+        },
+        {
+          "id": "super",
+          "label": "Superintendent on site",
+          "type": "text",
+          "carry": true
+        },
+        {
+          "id": "manpower",
+          "label": "Manpower on site (count)",
+          "type": "number",
+          "compare": true
+        },
+        {
+          "id": "trades",
+          "label": "Trades working",
+          "type": "text"
+        },
+        {
+          "id": "pctComplete",
+          "label": "Overall % complete",
+          "type": "percent",
+          "compare": true
+        }
+      ],
+      "sections": [
+        {
+          "id": "progress",
+          "title": "Building / phase progress",
+          "repeater": {
+            "id": "buildings",
+            "label": "Buildings & phases",
+            "addLabel": "Add building / phase",
+            "titleField": "name",
+            "carry": true,
+            "compareKey": "name",
+            "fields": [
+              {
+                "id": "name",
+                "label": "Building / phase",
+                "type": "text"
+              },
+              {
+                "id": "stage",
+                "label": "Current stage",
+                "type": "select",
+                "options": [
+                  "Not started",
+                  "Site work",
+                  "Foundation",
+                  "Framing",
+                  "Roofing / dry-in",
+                  "MEP rough-in",
+                  "Insulation",
+                  "Drywall",
+                  "Finishes",
+                  "Punch list",
+                  "Complete / TCO"
+                ],
+                "compare": true
+              },
+              {
+                "id": "pct",
+                "label": "% complete",
+                "type": "percent",
+                "compare": true
+              },
+              {
+                "id": "notes",
+                "label": "Notes",
+                "type": "textarea"
+              }
+            ]
+          }
+        },
+        {
+          "id": "schedule",
+          "title": "Schedule",
+          "fields": [
+            {
+              "id": "schedStatus",
+              "label": "Schedule status vs milestones",
+              "type": "segmented",
+              "options": [
+                "On track",
+                "At risk",
+                "Behind"
+              ],
+              "compare": true
+            },
+            {
+              "id": "daysBehind",
+              "label": "Days behind (0 if on track)",
+              "type": "number",
+              "compare": true
+            },
+            {
+              "id": "nextMilestone",
+              "label": "Next milestone",
+              "type": "text"
+            },
+            {
+              "id": "milestoneDate",
+              "label": "Milestone target date",
+              "type": "date"
+            },
+            {
+              "id": "completionDate",
+              "label": "Projected completion / TCO",
+              "type": "date",
+              "compare": true
+            },
+            {
+              "id": "weatherDays",
+              "label": "Weather delay days (since last visit)",
+              "type": "number"
+            },
+            {
+              "id": "weatherNotes",
+              "label": "Weather delay notes",
+              "type": "textarea"
+            },
+            {
+              "id": "schedNotes",
+              "label": "Schedule notes",
+              "type": "textarea"
+            }
+          ]
+        },
+        {
+          "id": "budget",
+          "title": "Budget & change orders",
+          "fields": [
+            {
+              "id": "budgetStatus",
+              "label": "Budget status",
+              "type": "segmented",
+              "options": [
+                "On budget",
+                "Watch",
+                "Over"
+              ],
+              "compare": true
+            },
+            {
+              "id": "coPendingCount",
+              "label": "Change orders pending (#)",
+              "type": "number"
+            },
+            {
+              "id": "coPendingAmt",
+              "label": "Pending CO amount ($)",
+              "type": "currency"
+            },
+            {
+              "id": "coApprovedAmt",
+              "label": "Approved COs to date ($)",
+              "type": "currency",
+              "compare": true
+            },
+            {
+              "id": "contingency",
+              "label": "Contingency remaining ($)",
+              "type": "currency",
+              "compare": true
+            },
+            {
+              "id": "budgetNotes",
+              "label": "Budget / change-order notes",
+              "type": "textarea"
+            }
+          ]
+        },
+        {
+          "id": "quality",
+          "title": "Quality",
+          "items": [
+            {
+              "id": "q_plans",
+              "label": "Work consistent with plans & specs"
+            },
+            {
+              "id": "q_framing",
+              "label": "Framing / structural workmanship"
+            },
+            {
+              "id": "q_envelope",
+              "label": "Building envelope & waterproofing",
+              "hint": "WRB, flashing, window install, roofing"
+            },
+            {
+              "id": "q_mep",
+              "label": "MEP rough-in"
+            },
+            {
+              "id": "q_finishes",
+              "label": "Drywall & finishes"
+            },
+            {
+              "id": "q_materials",
+              "label": "Material storage & protection"
+            },
+            {
+              "id": "q_inspections",
+              "label": "Third-party / municipal inspections status"
+            }
+          ]
+        },
+        {
+          "id": "safety",
+          "title": "Safety",
+          "items": [
+            {
+              "id": "s_ppe",
+              "label": "PPE compliance",
+              "hint": "Hard hats, vests, eyewear, boots"
+            },
+            {
+              "id": "s_housekeeping",
+              "label": "Housekeeping & debris"
+            },
+            {
+              "id": "s_fencing",
+              "label": "Perimeter fencing, signage & site security"
+            },
+            {
+              "id": "s_fall",
+              "label": "Fall protection, ladders & scaffolding"
+            },
+            {
+              "id": "s_swppp",
+              "label": "Erosion control / SWPPP"
+            },
+            {
+              "id": "s_traffic",
+              "label": "Site entrances & traffic control"
+            },
+            {
+              "id": "s_fire",
+              "label": "Fire extinguishers & hot-work controls"
+            }
+          ]
+        },
+        {
+          "id": "site",
+          "title": "Site work & common areas",
+          "items": [
+            {
+              "id": "sw_utilities",
+              "label": "Grading & site utilities"
+            },
+            {
+              "id": "sw_paving",
+              "label": "Paving, curbs & sidewalks"
+            },
+            {
+              "id": "sw_amenity",
+              "label": "Clubhouse / amenity construction"
+            },
+            {
+              "id": "sw_landscape",
+              "label": "Landscaping & hardscape"
+            }
+          ]
+        },
+        {
+          "id": "open",
+          "title": "Open items & follow-ups",
+          "repeater": {
+            "id": "openItems",
+            "label": "Open items",
+            "addLabel": "Add open item",
+            "titleField": "item",
+            "carryOpen": true,
+            "fields": [
+              {
+                "id": "item",
+                "label": "Item",
+                "type": "text"
+              },
+              {
+                "id": "owner",
+                "label": "Responsible",
+                "type": "select",
+                "options": [
+                  "General Contractor",
+                  "Development / PM",
+                  "Architect",
+                  "Owner",
+                  "Asset Manager",
+                  "Engineer",
+                  "Municipality"
+                ]
+              },
+              {
+                "id": "priority",
+                "label": "Priority",
+                "type": "segmented",
+                "options": [
+                  "High",
+                  "Medium",
+                  "Low"
+                ],
+                "sticky": true
+              },
+              {
+                "id": "due",
+                "label": "Due",
+                "type": "date"
+              },
+              {
+                "id": "status",
+                "label": "Status",
+                "type": "segmented",
+                "options": [
+                  "Open",
+                  "Closed"
+                ],
+                "sticky": true
+              },
+              {
+                "id": "notes",
+                "label": "Notes",
+                "type": "textarea"
+              }
+            ]
+          },
+          "fields": [
+            {
+              "id": "nextVisit",
+              "label": "Focus for next visit",
+              "type": "textarea"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
