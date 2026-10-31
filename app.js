@@ -677,21 +677,27 @@ async function importProperties(file) {
   if (data.type !== 'property-import' || !Array.isArray(data.properties)) {
     alert(data.app === 'property-inspections' ? 'That looks like a full backup. Use “Restore from backup” instead.' : 'That file isn’t a property list for this app.'); return;
   }
-  const existing = new Set((await DB.all('entities')).map(e => (e.kind || 'property') + '|' + normName(e.name)));
+  const existing = new Map((await DB.all('entities')).map(e => [(e.kind || 'property') + '|' + normName(e.name), e]));
   const fields = new Set([...ENTITY_FIELDS.property, ...ENTITY_FIELDS.project].map(f => f.id));
-  let added = 0, skipped = 0, bad = 0, units = 0;
+  let added = 0, skipped = 0, filled = 0, bad = 0, units = 0;
   for (const p of data.properties) {
     const name = String(p.name || '').replace(/\s+/g, ' ').trim();
     const kind = p.kind === 'project' ? 'project' : 'property';
     if (!name) { bad++; continue; }
     const key = kind + '|' + normName(name);
-    if (existing.has(key)) { skipped++; continue; }
+    if (existing.has(key)) {
+      // Already in the app: never overwrite what she entered, only fill in blank details (address, units, contact...).
+      const cur = existing.get(key); let changed = false;
+      for (const [k, v] of Object.entries(p)) if (fields.has(k) && k !== 'name' && v !== '' && v != null && (cur[k] === '' || cur[k] == null)) { cur[k] = v; changed = true; }
+      if (changed) { cur.updatedAt = Date.now(); await DB.put('entities', cur); filled++; }
+      skipped++; continue;
+    }
     const e = { id: uid(), kind, name, createdAt: Date.now(), updatedAt: Date.now(), importedFrom: data.source || file.name };
     for (const [k, v] of Object.entries(p)) if (fields.has(k) && k !== 'name' && v !== '' && v != null) e[k] = v;
-    await DB.put('entities', e); existing.add(key); added++; units += Number(e.units) || 0;
+    await DB.put('entities', e); existing.set(key, e); added++; units += Number(e.units) || 0;
   }
   S.tab = 'property';
-  alert(`Imported ${added} ${added === 1 ? 'property' : 'properties'} (${units.toLocaleString('en-US')} units).` + (skipped ? ` Skipped ${skipped} already in the app.` : '') + (bad ? ` ${bad} rows had no name.` : ''));
+  alert(`Imported ${added} ${added === 1 ? 'property' : 'properties'} (${units.toLocaleString('en-US')} units).` + (skipped ? ` ${skipped} were already in the app (not duplicated${filled ? `; filled in blank details on ${filled}` : ''}).` : '') + (bad ? ` ${bad} rows had no name.` : ''));
   location.hash = '#/'; route();
 }
 async function importBackup(file) {
