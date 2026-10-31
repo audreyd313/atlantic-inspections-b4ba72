@@ -117,3 +117,4 @@ details.sec[open]>summary{border-bottom:1px solid var(--line);background:#fafbfc
 .brandlogo{height:40px;width:auto;flex:none;margin-left:4px}
 .kv dd a{color:var(--navy);text-decoration:underline;text-underline-offset:2px}
 .kv dd{overflow-wrap:anywhere;white-space:pre-line;min-width:0}.kv{grid-template-columns:minmax(96px,auto) 1fr}
+.badge.rehab{background:#e6f2ef;color:#2f7d6d}

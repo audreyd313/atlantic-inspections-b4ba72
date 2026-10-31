@@ -88,6 +88,10 @@ const Core = {
   csv(rows) { return rows.map(r => r.map(c => { const s = String(c ?? ''); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; }).join(',')).join('\r\n'); },
 };
 
+/* Which inspection forms a site uses. A property flagged as a rolling rehab gets both. */
+const formsFor = e => (e.kind === 'project' ? ['construction'] : e.rehab ? ['routine', 'construction'] : ['routine']);
+const inTab = (e, tab) => (tab === 'property' ? e.kind === 'property' : e.kind === 'project' || !!e.rehab);
+
 /* ---------- App bar & save state ---------- */
 function setBar(title, sub = '', back = null) {
   document.getElementById('title').textContent = title;
@@ -159,7 +163,7 @@ async function viewHome() {
     }
   }
 
-  const cnt = k => ents.filter(e => e.kind === k).length;
+  const cnt = k => ents.filter(e => inTab(e, k)).length;
   const tabs = h('div', { class: 'tabs' },
     h('button', { class: S.tab === 'property' ? 'on' : '', onclick: () => { S.tab = 'property'; route(); } }, `Operating (${cnt('property')})`),
     h('button', { class: S.tab === 'project' ? 'on' : '', onclick: () => { S.tab = 'project'; route(); } }, `Construction (${cnt('project')})`));
@@ -170,21 +174,22 @@ async function viewHome() {
   function draw() {
     list.innerHTML = '';
     const q = S.q.trim().toLowerCase();
-    const items = ents.filter(e => e.kind === S.tab && (!q || `${e.name} ${e.city || ''}`.toLowerCase().includes(q))).sort((a, b) => a.name.localeCompare(b.name));
+    const items = ents.filter(e => inTab(e, S.tab) && (!q || `${e.name} ${e.city || ''}`.toLowerCase().includes(q))).sort((a, b) => a.name.localeCompare(b.name));
     if (!items.length) list.append(h('div', { class: 'empty' }, q ? 'No matches.' : S.tab === 'property' ? 'No properties yet. Tap “Add property” to get started, or import your property list.' : 'No construction projects yet. Tap “Add project”.'));
     if (!items.length && !q && S.tab === 'property') list.append(importButton());
     for (const e of items) {
-      const done = (byEnt[e.id] || []).filter(i => i.status === 'complete').sort((a, b) => (b.fields.date || '').localeCompare(a.fields.date || ''));
+      const tabType = S.tab === 'project' ? 'construction' : 'routine';
+      const done = (byEnt[e.id] || []).filter(i => i.status === 'complete' && i.type === tabType).sort((a, b) => (b.fields.date || '').localeCompare(a.fields.date || ''));
       const last = done[0];
       let pill = null;
-      if (last && e.kind === 'property') { const sc = Core.overall(last); const b = Core.band(sc); pill = h('div', { class: 'scorepill', style: `background:${b.color}` }, sc == null ? '—' : sc.toFixed(1), h('small', {}, 'score')); }
-      if (last && e.kind === 'project') pill = h('div', { class: 'scorepill', style: 'background:#1e3a5f' }, last.fields.pctComplete !== '' && last.fields.pctComplete != null ? last.fields.pctComplete + '%' : '—', h('small', {}, 'complete'));
+      if (last && tabType === 'routine') { const sc = Core.overall(last); const b = Core.band(sc); pill = h('div', { class: 'scorepill', style: `background:${b.color}` }, sc == null ? '—' : sc.toFixed(1), h('small', {}, 'score')); }
+      if (last && tabType === 'construction') pill = h('div', { class: 'scorepill', style: 'background:#1e3a5f' }, last.fields.pctComplete !== '' && last.fields.pctComplete != null ? last.fields.pctComplete + '%' : '—', h('small', {}, 'complete'));
       const hasDraft = (byEnt[e.id] || []).some(i => i.status === 'draft');
       list.append(h('div', { class: 'card ent', onclick: () => (location.hash = '#/e/' + e.id) },
         h('div', { class: 'main' },
-          h('div', { class: 'name' }, e.name, e.sample ? h('span', { class: 'badge sample' }, 'Sample') : null, hasDraft ? h('span', { class: 'badge draft' }, 'Draft') : null),
+          h('div', { class: 'name' }, e.name, e.sample ? h('span', { class: 'badge sample' }, 'Sample') : null, e.rehab && e.kind === 'property' ? h('span', { class: 'badge rehab' }, 'Rolling rehab') : null, hasDraft ? h('span', { class: 'badge draft' }, 'Draft') : null),
           h('div', { class: 'meta' }, [e.city, e.units ? `${e.units} units` : null].filter(Boolean).join(' · ')),
-          h('div', { class: 'meta' }, last ? `Last ${e.kind === 'property' ? 'walk' : 'visit'}: ${fmtDate(last.fields.date)}` : 'Not inspected yet')),
+          h('div', { class: 'meta' }, last ? `Last ${tabType === 'routine' ? 'walk' : 'site visit'}: ${fmtDate(last.fields.date)}` : `No ${tabType === 'routine' ? 'property walk' : 'site visit'} yet`)),
         pill, h('div', { class: 'chev' }, '›')));
     }
   }
@@ -214,6 +219,9 @@ async function viewEntityForm(id, kind) {
   setBar(id ? `Edit ${e.name}` : e.kind === 'property' ? 'Add property' : 'Add project', '', id ? '#/e/' + id : '#/');
   const card = h('div', { class: 'card' });
   for (const f of ENTITY_FIELDS[e.kind]) card.append(fieldEl(f, () => e[f.id], v => (e[f.id] = v)));
+  if (e.kind === 'property') card.append(h('label', { class: 'f', style: 'display:flex;gap:10px;align-items:center' },
+    h('input', { type: 'checkbox', id: 'rehabBox', style: 'width:24px;height:24px;min-height:0;flex:none', checked: e.rehab ? true : null, onchange: ev => (e.rehab = ev.target.checked) }),
+    h('span', { style: 'margin:0' }, 'Rolling rehab / under renovation: use both Property Walk and Construction Site Visit (also listed under Construction)')));
   card.append(h('label', { class: 'f', style: 'display:flex;gap:10px;align-items:center' },
     h('input', { type: 'checkbox', style: 'width:24px;height:24px;min-height:0', checked: e.sample ? true : null, onchange: ev => (e.sample = ev.target.checked) }),
     h('span', { style: 'margin:0' }, 'This is sample / test data (marks reports “SAMPLE”)')));
@@ -235,8 +243,7 @@ async function viewEntity(id) {
   const e = await DB.get('entities', id); if (!e) { location.hash = '#/'; return; }
   setBar(e.name, [e.city, e.units ? `${e.units} units` : ''].filter(Boolean).join(' · '), '#/');
   const insps = (await DB.byIndex('inspections', 'entityId', id)).sort((a, b) => (b.fields.date || '').localeCompare(a.fields.date || '') || b.createdAt - a.createdAt);
-  const draft = insps.find(i => i.status === 'draft');
-  const typeKey = e.kind === 'project' ? 'construction' : 'routine';
+  const forms = formsFor(e);
   if (e.sample) $view.append(h('div', { class: 'samplebar' }, 'SAMPLE DATA — created for testing'));
   const info = h('dl', { class: 'kv' });
   for (const f of ENTITY_FIELDS[e.kind].slice(1)) if (e[f.id] !== '' && e[f.id] != null) {
@@ -246,27 +253,31 @@ async function viewEntity(id) {
       : f.id === 'address' ? h('a', { href: 'https://maps.apple.com/?q=' + encodeURIComponent([e.address, e.city, e.zip].filter(Boolean).join(', ')), target: '_blank', rel: 'noopener' }, v) : v;
     info.append(h('dt', {}, f.label), h('dd', {}, dd));
   }
+  if (forms.length > 1) info.prepend(h('dt', {}, 'Inspection forms'), h('dd', {}, 'Rolling rehab: Property Walk + Construction Site Visit'));
   $view.append(h('div', { class: 'card' }, info.children.length ? info : h('div', { class: 'muted' }, 'No details yet.'),
     h('button', { class: 'btn secondary', style: 'min-height:44px;margin-top:12px', onclick: () => (location.hash = '#/edit/' + id) }, 'Edit details')));
-  if (draft) $view.append(h('button', { class: 'btn teal', onclick: () => (location.hash = '#/i/' + draft.id) }, `Resume draft (${fmtDate(draft.fields.date)})`));
-  $view.append(h('button', { class: draft ? 'btn secondary' : 'btn', id: 'startInspection', onclick: async () => {
-    if (!String(e.name || '').trim()) { toast('Add the site name before starting - it appears on every report'); location.hash = '#/edit/' + id; return; }
-    if (draft && !confirm('You already have a draft for this property. Start another one anyway?')) return;
-    const insp = await newInspection(e, typeKey); location.hash = '#/i/' + insp.id;
-  } }, e.kind === 'project' ? '+ Start site visit' : '+ Start property walk'));
+  for (const d of insps.filter(i => i.status === 'draft')) $view.append(h('button', { class: 'btn teal', onclick: () => (location.hash = '#/i/' + d.id) }, `Resume ${CFG.types[d.type].name.toLowerCase()} draft (${fmtDate(d.fields.date)})`));
+  forms.forEach((t, idx) => {
+    const draft = insps.find(i => i.status === 'draft' && i.type === t);
+    $view.append(h('button', { class: draft || idx > 0 ? 'btn secondary' : 'btn', id: idx === 0 ? 'startInspection' : 'startInspection2', 'data-type': t, onclick: async () => {
+      if (!String(e.name || '').trim()) { toast('Add the site name before starting - it appears on every report'); location.hash = '#/edit/' + id; return; }
+      if (draft && !confirm(`You already have a ${CFG.types[t].name.toLowerCase()} draft for this site. Start another one anyway?`)) return;
+      const insp = await newInspection(e, t); location.hash = '#/i/' + insp.id;
+    } }, t === 'construction' ? '+ Start construction site visit' : '+ Start property walk'));
+  });
 
   $view.append(h('h2', {}, 'History'));
   if (!insps.length) $view.append(h('div', { class: 'empty' }, 'No inspections yet.'));
   for (const i of insps) {
     const sc = Core.overall(i), b = Core.band(sc), ai = Core.actionItems(i).length;
-    const right = e.kind === 'project'
+    const right = i.type === 'construction'
       ? h('div', { class: 'scorepill', style: 'background:#1e3a5f' }, i.fields.pctComplete !== '' && i.fields.pctComplete != null ? i.fields.pctComplete + '%' : '—', h('small', {}, 'complete'))
       : h('div', { class: 'scorepill', style: `background:${b.color}` }, sc == null ? '—' : sc.toFixed(1), h('small', {}, 'score'));
     $view.append(h('div', { class: 'card ent', onclick: () => (location.hash = (i.status === 'draft' ? '#/i/' : '#/r/') + i.id) },
       h('div', { class: 'main' },
         h('div', { class: 'name', style: 'font-size:16px' }, fmtDate(i.fields.date), h('span', { class: 'badge ' + (i.status === 'draft' ? 'draft' : 'done') }, i.status === 'draft' ? 'Draft' : 'Complete')),
         h('div', { class: 'meta' }, `${CFG.types[i.type].name}${i.fields.inspector ? ' · ' + i.fields.inspector : ''}`),
-        h('div', { class: 'meta' }, `${ai} action item${ai === 1 ? '' : 's'}${e.kind === 'project' && sc != null ? ` · quality/safety ${sc.toFixed(1)}` : ''}`)),
+        h('div', { class: 'meta' }, `${ai} action item${ai === 1 ? '' : 's'}${i.type === 'construction' && sc != null ? ` · quality/safety ${sc.toFixed(1)}` : ''}`)),
       right, h('div', { class: 'chev' }, '›')));
   }
 }
@@ -677,27 +688,37 @@ async function importProperties(file) {
   if (data.type !== 'property-import' || !Array.isArray(data.properties)) {
     alert(data.app === 'property-inspections' ? 'That looks like a full backup. Use “Restore from backup” instead.' : 'That file isn’t a property list for this app.'); return;
   }
-  const existing = new Map((await DB.all('entities')).map(e => [(e.kind || 'property') + '|' + normName(e.name), e]));
-  const fields = new Set([...ENTITY_FIELDS.property, ...ENTITY_FIELDS.project].map(f => f.id));
+  const existing = new Map((await DB.all('entities')).map(e => [normName(e.name), e])) // duplicates are matched by name only;
+  const fields = new Set([...ENTITY_FIELDS.property, ...ENTITY_FIELDS.project].map(f => f.id).concat(['rehab']));
+  const SETTABLE = new Set(['rehab']); // the only fields a list file may overwrite, and only via an explicit "set"
+  let updated = 0;
   let added = 0, skipped = 0, filled = 0, bad = 0, units = 0;
   for (const p of data.properties) {
     const name = String(p.name || '').replace(/\s+/g, ' ').trim();
     const kind = p.kind === 'project' ? 'project' : 'property';
     if (!name) { bad++; continue; }
-    const key = kind + '|' + normName(name);
+    const key = normName(name);
     if (existing.has(key)) {
       // Already in the app: never overwrite what she entered, only fill in blank details (address, units, contact...).
-      const cur = existing.get(key); let changed = false;
+      const cur = existing.get(key); let changed = false, upd = false;
       for (const [k, v] of Object.entries(p)) if (fields.has(k) && k !== 'name' && v !== '' && v != null && (cur[k] === '' || cur[k] == null)) { cur[k] = v; changed = true; }
-      if (changed) { cur.updatedAt = Date.now(); await DB.put('entities', cur); filled++; }
+      // Explicit corrections from a newer list file (never touches inspections):
+      for (const [k, v] of Object.entries(p.set || {})) if (SETTABLE.has(k) && cur[k] !== v) { cur[k] = v; upd = true; }
+      for (const r of p.replaceNotes || []) {
+        const n = String(cur.notes || '');
+        if (r.from && n.includes(r.from)) { cur.notes = n.replace(r.from, r.to || '').replace(/\n{2,}/g, '\n').trim(); upd = true; }
+      }
+      if (changed || upd) { cur.updatedAt = Date.now(); await DB.put('entities', cur); }
+      if (changed) filled++; if (upd) updated++;
       skipped++; continue;
     }
     const e = { id: uid(), kind, name, createdAt: Date.now(), updatedAt: Date.now(), importedFrom: data.source || file.name };
     for (const [k, v] of Object.entries(p)) if (fields.has(k) && k !== 'name' && v !== '' && v != null) e[k] = v;
+    for (const [k, v] of Object.entries(p.set || {})) if (SETTABLE.has(k)) e[k] = v;
     await DB.put('entities', e); existing.set(key, e); added++; units += Number(e.units) || 0;
   }
   S.tab = 'property';
-  alert(`Imported ${added} ${added === 1 ? 'property' : 'properties'} (${units.toLocaleString('en-US')} units).` + (skipped ? ` ${skipped} ${skipped === 1 ? 'was' : 'were'} already in the app (not duplicated${filled ? `; filled in blank details on ${filled}` : ''}).` : '') + (bad ? ` ${bad} rows had no name.` : ''));
+  alert(`Imported ${added} ${added === 1 ? 'property' : 'properties'} (${units.toLocaleString('en-US')} units).` + (skipped ? ` ${skipped} ${skipped === 1 ? 'was' : 'were'} already in the app (not duplicated${filled ? `; filled in blank details on ${filled}` : ''}).` : '') + (updated ? ` Updated ${updated} from the newer list (type/notes).` : '') + (bad ? ` ${bad} rows had no name.` : ''));
   location.hash = '#/'; route();
 }
 async function importBackup(file) {
