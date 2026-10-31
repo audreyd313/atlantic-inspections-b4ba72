@@ -697,7 +697,7 @@ async function importProperties(file) {
     await DB.put('entities', e); existing.set(key, e); added++; units += Number(e.units) || 0;
   }
   S.tab = 'property';
-  alert(`Imported ${added} ${added === 1 ? 'property' : 'properties'} (${units.toLocaleString('en-US')} units).` + (skipped ? ` ${skipped} were already in the app (not duplicated${filled ? `; filled in blank details on ${filled}` : ''}).` : '') + (bad ? ` ${bad} rows had no name.` : ''));
+  alert(`Imported ${added} ${added === 1 ? 'property' : 'properties'} (${units.toLocaleString('en-US')} units).` + (skipped ? ` ${skipped} ${skipped === 1 ? 'was' : 'were'} already in the app (not duplicated${filled ? `; filled in blank details on ${filled}` : ''}).` : '') + (bad ? ` ${bad} rows had no name.` : ''));
   location.hash = '#/'; route();
 }
 async function importBackup(file) {
