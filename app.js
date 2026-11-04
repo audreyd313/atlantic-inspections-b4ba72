@@ -138,6 +138,7 @@ async function route() {
     else if (r === 'i') await viewInspect(id);
     else if (r === 'r') await viewReport(id);
     else if (r === 'settings') await viewSettings();
+    else if (r === 'bulk') await viewBulk(id);
     else location.hash = '#/';
   } catch (e) { console.error(e); $view.append(h('div', { class: 'card' }, 'Something went wrong: ' + e.message)); }
 }
@@ -429,6 +430,9 @@ async function viewInspect(id) {
     h('div', { style: 'font-weight:700;margin-bottom:10px' }, def.name + ' details'),
     S.prev ? h('div', { class: 'small muted', style: 'margin:-6px 0 10px' }, `Comparing to last ${insp.type === 'construction' ? 'visit' : 'walk'} on ${fmtDate(S.prev.fields.date)}`) : null,
     hdr));
+  const pending = (insp.bulkQueue || []).length;
+  $view.append(h('button', { class: 'btn ' + (pending ? 'teal' : 'secondary'), id: 'bulkBtn', onclick: () => (location.hash = '#/bulk/' + insp.id) },
+    h('span', { html: ICON.cam }), pending ? `Sort ${pending} waiting photo${pending === 1 ? '' : 's'}` : 'Add photos in bulk (camera roll / glasses)'));
 
   const secEls = {};
   def.sections.forEach((sec, idx) => {
@@ -448,6 +452,12 @@ async function viewInspect(id) {
     secEls[sec.id] = { sum, sec };
     $view.append(det);
   });
+
+  // General / unassigned photos (from bulk sorting or added here); they appear in the report's photo section.
+  insp.generalPhotos ||= [];
+  const gp = photoWidget(insp.generalPhotos, 'General');
+  $view.append(h('div', { class: 'card', id: 'generalPhotos' }, h('div', { style: 'font-weight:700' }, 'General photos'),
+    h('div', { class: 'small muted' }, 'Not tied to a checklist item. Included in the report.'), h('div', { class: 'acts' }, gp.button), gp.thumbs, gp.file));
 
   const ptxt = h('div', { class: 'ptxt' }), bar = h('div'), scoreEl = h('div', { class: 'chip', style: 'font-size:15px;padding:8px 10px' });
   document.body.append(h('div', { class: 'bottombar' },

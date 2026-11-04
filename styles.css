@@ -118,3 +118,28 @@ details.sec[open]>summary{border-bottom:1px solid var(--line);background:#fafbfc
 .kv dd a{color:var(--navy);text-decoration:underline;text-underline-offset:2px}
 .kv dd{overflow-wrap:anywhere;white-space:pre-line;min-width:0}.kv{grid-template-columns:minmax(96px,auto) 1fr}
 .badge.rehab{background:#e6f2ef;color:#2f7d6d}
+.bulkcard{padding:10px}
+.bulkcard.sel{border-color:#2f7d6d;box-shadow:0 0 0 3px rgba(47,125,109,.35)}
+.bulkimgwrap{position:relative}
+.bulkimg{width:100%;height:230px;object-fit:cover;border-radius:10px;background:#e6eaf0;display:block}
+.selbox{position:absolute;top:8px;left:8px;width:44px;height:44px;border-radius:10px;border:2.5px solid #fff;background:rgba(0,0,0,.35);color:#fff;font-size:24px;font-weight:800}
+.selbox.on{background:#2f7d6d}
+.timetag{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.62);color:#fff;font-size:13px;font-weight:600;padding:4px 8px;border-radius:8px}
+.bulkcap{width:100%;min-height:44px;border:1px solid #c9d2dc;border-radius:10px;padding:8px 12px;margin-top:8px;font-size:16px}
+.bulkacts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.bulkacts button{min-height:48px;border-radius:10px;border:1.5px solid #c9d2dc;background:#fff;font-weight:700;font-size:14px;padding:4px 8px}
+.bulkacts .quick{grid-column:1/-1;background:#1e3a5f;border-color:#1e3a5f;color:#fff;font-size:15px}
+.bulkacts .quick small{display:block;font-weight:500;font-size:11px;opacity:.85}
+.bulkacts .pick{grid-column:1/-1;color:#1e3a5f;border-color:#1e3a5f}
+.bulkacts .skip{color:#b42318}
+.linkbtn{border:0;background:none;color:#1e3a5f;font-weight:700;padding:6px 8px 6px 0;min-height:36px;margin-right:6px}
+.pickersheet{height:85vh;display:flex;flex-direction:column}
+.picklist{overflow:auto;flex:1}
+.pickgrp{border-bottom:1px solid #eef1f4}
+.pickgrp>summary{padding:12px 4px;font-weight:700;display:flex;justify-content:space-between;min-height:48px;align-items:center}
+.pickgrp .cnt{font-size:12px;color:#2f7d6d}
+.pickitem{display:block;width:100%;text-align:left;min-height:48px;border:0;border-top:1px solid #f1f3f6;background:#fff;padding:10px 14px;font-size:16px}
+.pickitem.last{background:#e6f2ef;font-weight:700}
+.bulkbar .prog{display:block}
+.bulkimg{object-fit:contain;background:#14202e;height:260px}
+.toast{bottom:auto;top:calc(70px + env(safe-area-inset-top))}

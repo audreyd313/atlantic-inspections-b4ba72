@@ -206,6 +206,7 @@ const Report = (() => {
       for (const it of sec.items || []) for (const p of insp.items[it.id]?.photos || []) ids.push(p);
       if (sec.repeater) for (const r of insp.reps[sec.repeater.id] || []) for (const p of r.photos || []) ids.push(p);
     }
+    for (const p of insp.generalPhotos || []) ids.push(p);
     const photos = (await Promise.all(ids.map(id => DB.get('photos', id)))).filter(Boolean);
     if (photos.length) {
       y = heading(`Photos (${photos.length})`, y + 6, 200) + 6;
@@ -220,7 +221,8 @@ const Report = (() => {
         doc.addImage(await blobToDataUrl(p.blob), 'JPEG', x + (cw - iw) / 2, y + (ih - hh) / 2, iw, hh, undefined, 'FAST');
         doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(...NAVY);
         doc.text(doc.splitTextToSize(clean(`${i + 1}. ${p.label || ''}`), cw).slice(0, 2), x, y + ih + 10);
-        if (p.caption) { doc.setFont('helvetica', 'normal'); doc.setTextColor(...GREY); doc.text(doc.splitTextToSize(clean(p.caption), cw).slice(0, 1), x, y + ih + 28); }
+        const capLine = [p.caption, p.takenAt ? new Date(p.takenAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''].filter(Boolean).join('  |  ');
+        if (capLine) { doc.setFont('helvetica', 'normal'); doc.setTextColor(...GREY); doc.text(doc.splitTextToSize(clean(capLine), cw).slice(0, 1), x, y + ih + 28); }
       }
     }
 
