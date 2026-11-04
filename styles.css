@@ -143,3 +143,11 @@ details.sec[open]>summary{border-bottom:1px solid var(--line);background:#fafbfc
 .bulkbar .prog{display:block}
 .bulkimg{object-fit:contain;background:#14202e;height:260px}
 .toast{bottom:auto;top:calc(70px + env(safe-area-inset-top))}
+.acts{gap:6px}.acts button{padding:0 4px;font-size:13.5px;gap:4px}
+.voicebtn{min-height:44px;border:1px solid var(--line);background:#f8fafc;border-radius:10px;font-weight:600;color:#344054;display:flex;align-items:center;justify-content:center;gap:5px;flex:1}
+.voicebtn.compact{flex:none;min-height:36px;padding:0 10px;font-size:13px;margin-left:auto}
+.voicebtn.rec{background:#b42318!important;border-color:#b42318!important;color:#fff!important;animation:micpulse 1.2s ease-in-out infinite}
+@keyframes micpulse{0%,100%{box-shadow:0 0 0 0 rgba(180,35,24,.55)}50%{box-shadow:0 0 0 9px rgba(180,35,24,0)}}
+.f>span.withmic{display:flex;align-items:center;gap:8px}
+.interim{font-size:13px;color:#b42318;font-weight:600;margin-top:6px}
+.voicehint{font-size:13px;background:#eef4fb;border:1px solid #c9dcf0;color:#1e3a5f;border-radius:8px;padding:8px 10px;margin-top:6px}

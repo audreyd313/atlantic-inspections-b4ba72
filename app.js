@@ -308,7 +308,7 @@ async function newInspection(entity, type) {
 /* ---------- Generic field renderer ---------- */
 function fieldEl(f, get, set, opts = {}) {
   const isSeg = f.type === 'segmented';
-  const wrap = h(isSeg ? 'div' : 'label', { class: 'f' + (f.type === 'textarea' || isSeg || opts.wide ? ' wide' : '') }, h('span', {}, f.label));
+  const wrap = h(isSeg || f.type === 'textarea' ? 'div' : 'label', { class: 'f' + (f.type === 'textarea' || isSeg || opts.wide ? ' wide' : '') }, h('span', {}, f.label));
   let cmpEl = null;
   const hasCmp = opts.cmp !== undefined && opts.cmp !== null && opts.cmp !== '';
   const updCmp = () => {
@@ -330,7 +330,8 @@ function fieldEl(f, get, set, opts = {}) {
     const draw = () => { input.innerHTML = ''; for (const o of f.options) input.append(h('button', { type: 'button', class: get() === o ? 'on' : '', 'data-v': o, onclick: () => { doSet(get() === o && !f.sticky ? '' : o); draw(); } }, o)); };
     draw();
   } else if (f.type === 'textarea') {
-    input = h('textarea', { oninput: e => doSet(e.target.value) }); input.value = get() ?? '';
+    input = h('textarea', { oninput: e => doSet(e.target.value), 'aria-label': f.label }); input.value = get() ?? '';
+    wrap.firstChild.classList.add('withmic'); wrap.firstChild.append(Voice.button(input, { compact: true, container: wrap }));
   } else {
     const num = ['number', 'percent', 'currency'].includes(f.type);
     input = h('input', { type: num ? 'number' : ['date', 'tel', 'email'].includes(f.type) ? f.type : 'text', inputmode: num ? (f.type === 'number' ? 'numeric' : 'decimal') : null,
@@ -524,7 +525,7 @@ function itemEl(it, sec) {
     queueSave();
   } }, h('span', { html: ICON.flag }), 'Flag');
   el.append(...[h('div', { class: 'lbl' }, it.label), it.hint ? h('div', { class: 'hint' }, it.hint) : null, rate, lbl,
-    h('div', { class: 'acts' }, noteBtn, ph.button, flagBtn), notes, ph.thumbs, ph.file, flagBox].filter(Boolean));
+    h('div', { class: 'acts' }, noteBtn, Voice.button(notes, { container: el }), ph.button, flagBtn), notes, ph.thumbs, ph.file, flagBox].filter(Boolean));
   drawRate();
   return el;
 }

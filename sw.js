@@ -1,6 +1,6 @@
 // Bump CACHE when you deploy changes so phones pick up the new version.
-const CACHE = 'inspections-v11';
-const SHELL = ['./', './index.html', './styles.css', './db.js', './pdf.js', './app.js', './bulk.js', './checklists.json',
+const CACHE = 'inspections-v12';
+const SHELL = ['./', './index.html', './styles.css', './db.js', './pdf.js', './app.js', './bulk.js', './voice.js', './checklists.json',
   './manifest.webmanifest', './vendor/jspdf.umd.min.js', './vendor/jspdf.plugin.autotable.min.js',
   './assets/atlantic-logo-white.png', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
