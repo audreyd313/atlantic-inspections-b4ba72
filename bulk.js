@@ -130,6 +130,11 @@ async function viewBulk(id) {
           lastKey ? h('button', { type: 'button', class: 'quick', onclick: () => assign([p.id], lastKey) }, h('small', {}, 'Same as last:'), tByKey[lastKey].label) : null,
           h('button', { type: 'button', class: 'pick', onclick: () => openPicker(key => assign([p.id], key)) }, lastKey ? 'Other item…' : 'Assign to item…'),
           h('button', { type: 'button', class: 'gen', onclick: () => assign([p.id], 'general') }, 'General'),
+          h('button', { type: 'button', class: 'savephoto', onclick: ev => {
+            ev.stopPropagation();
+            const file = toFile(p.blob, photoFileName(p.id, insp, ent));
+            saveFiles([file]).then(r => r === 'downloaded' && toast('Photo downloaded')).catch(e => toast('Could not save: ' + (e?.message || e), 3500));
+          } }, 'Save to camera roll'),
           h('button', { type: 'button', class: 'skip', onclick: () => skip([p.id]) }, 'Skip')));
       list.append(card);
     }

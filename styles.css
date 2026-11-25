@@ -81,8 +81,10 @@ details.sec[open]>summary{border-bottom:1px solid var(--line);background:#fafbfc
 .notes{width:100%;margin-top:8px;min-height:70px;border:1px solid #c9d2dc;border-radius:10px;padding:10px;font-size:16px;resize:vertical}
 .flagbox{margin-top:8px;padding:10px;border-radius:10px;background:#fff6f5;border:1px solid #f6cfca}
 .flagbox .f{margin-bottom:8px}
-.thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:flex-start}
 .thumbs img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:pointer}
+.thumbwrap{display:flex;flex-direction:column;width:72px;gap:4px}
+.thumbsave{min-height:28px;border:0;border-radius:6px;background:var(--navy);color:#fff;font-size:11px;font-weight:700;padding:0;cursor:pointer}
 .rep{border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0;background:#fcfcfd}
 .rep .rephead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-weight:700}
 .rep .rm{border:0;background:transparent;color:var(--red);font-weight:600;min-height:40px;padding:0 8px}
@@ -132,6 +134,7 @@ details.sec[open]>summary{border-bottom:1px solid var(--line);background:#fafbfc
 .bulkacts .quick small{display:block;font-weight:500;font-size:11px;opacity:.85}
 .bulkacts .pick{grid-column:1/-1;color:#1e3a5f;border-color:#1e3a5f}
 .bulkacts .skip{color:#b42318}
+.bulkacts .savephoto{grid-column:1/-1;background:#2f7d6d;border-color:#2f7d6d;color:#fff}
 .linkbtn{border:0;background:none;color:#1e3a5f;font-weight:700;padding:6px 8px 6px 0;min-height:36px;margin-right:6px}
 .pickersheet{height:85vh;display:flex;flex-direction:column}
 .picklist{overflow:auto;flex:1}

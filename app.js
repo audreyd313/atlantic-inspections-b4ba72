@@ -116,6 +116,7 @@ async function saveNow() {
   S.insp.updatedAt = Date.now();
   await DB.put('inspections', S.insp);
   document.getElementById('saveState').textContent = 'Saved ✓';
+  if (S.refreshSaveAll) S.refreshSaveAll();
 }
 window.addEventListener('pagehide', () => { if (saveTimer) saveNow(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && saveTimer) saveNow(); });
@@ -367,6 +368,70 @@ function compressImage(file, max = 1600, quality = 0.72) {
     img.src = u;
   });
 }
+
+/* ---------- Save photos to camera roll ---------- */
+// iPhone: Web Share API with files -> share sheet "Save Image" puts it in Photos. Elsewhere: <a download> fallback.
+function inspPhotoIds(insp) {
+  const ids = [], def = CFG.types[insp.type];
+  for (const sec of def.sections) {
+    for (const it of sec.items || []) for (const p of insp.items?.[it.id]?.photos || []) ids.push(p);
+    if (sec.repeater) for (const r of insp.reps?.[sec.repeater.id] || []) for (const p of r.photos || []) ids.push(p);
+  }
+  for (const p of insp.generalPhotos || []) ids.push(p);
+  for (const p of insp.bulkQueue || []) ids.push(p);
+  return [...new Set(ids)];
+}
+function photoFileName(id, insp, ent) {
+  const ids = insp ? inspPhotoIds(insp) : [];
+  const n = ids.indexOf(id) + 1 || 1;
+  const name = slug(ent?.name || 'Inspection').replace(/-/g, '_') || 'Inspection';
+  return `${name}_${insp?.fields?.date || today()}_${n}.jpg`;
+}
+const toFile = (blob, name) => new File([blob], name, { type: blob.type || 'image/jpeg', lastModified: Date.now() });
+// Must be called directly from a tap (no awaits before it) so iOS allows the share sheet.
+function saveFiles(files) {
+  if (navigator.canShare && navigator.share) {
+    let ok = false; try { ok = navigator.canShare({ files }); } catch (e) {}
+    if (ok) return navigator.share({ files }).then(() => 'shared', e => (e && e.name === 'AbortError' ? 'cancelled' : Promise.reject(e)));
+  }
+  files.forEach((f, i) => setTimeout(() => downloadBlob(f, f.name), i * 300));
+  return Promise.resolve('downloaded');
+}
+async function loadInspPhotoFiles(insp, ent) {
+  const out = [];
+  const ids = inspPhotoIds(insp);
+  for (let i = 0; i < ids.length; i++) { const p = await DB.get('photos', ids[i]); if (p?.blob) out.push(toFile(p.blob, photoFileName(ids[i], insp, ent))); }
+  return out;
+}
+// "Save all photos" button. Files are preloaded so a tap can open the iOS share sheet immediately.
+// Preload is refreshed after photos are added (queueSave/saveNow), so a first empty load is not sticky.
+function saveAllButton(insp, ent) {
+  let files = [], idsKey = '';
+  const currentIds = () => inspPhotoIds(insp);
+  const keyOf = ids => ids.join(',');
+  const label = n => { btn.textContent = `Save all photos to camera roll (${n})`; btn.hidden = !n; };
+  async function preload() {
+    const ids = currentIds();
+    const k = keyOf(ids);
+    label(ids.length);
+    if (!ids.length) { files = []; idsKey = k; return; }
+    const loaded = await loadInspPhotoFiles(insp, ent);
+    if (keyOf(currentIds()) === k) { files = loaded; idsKey = k; label(files.length); }
+  }
+  const btn = h('button', { type: 'button', class: 'btn secondary', id: 'saveAllPhotos', onclick: () => {
+    const ids = currentIds();
+    if (!ids.length) { toast('No photos in this inspection'); return; }
+    if (idsKey === keyOf(ids) && files.length) {
+      saveFiles(files).then(r => r === 'downloaded' && toast(`${files.length} photo${files.length === 1 ? '' : 's'} downloaded`))
+        .catch(e => { console.warn(e); toast(e?.name === 'NotAllowedError' ? 'Tap the button again to save' : 'Could not save: ' + (e?.message || e), 3500); });
+      return;
+    }
+    preload().then(() => toast('Tap the button again to save'));
+  } });
+  preload();
+  S.refreshSaveAll = preload;
+  return btn;
+}
 function photoWidget(arr, label) {
   const thumbs = h('div', { class: 'thumbs' });
   const file = h('input', { type: 'file', accept: 'image/*', multiple: true, hidden: true, onchange: async e => {
@@ -378,7 +443,7 @@ function photoWidget(arr, label) {
         await DB.put('photos', p); arr.push(p.id);
       } catch (err) { toast(err.message); }
     }
-    queueSave(); draw(); btnCount();
+    queueSave(); draw(); btnCount(); if (S.refreshSaveAll) S.refreshSaveAll();
   } });
   let countEl = h('span');
   const btnCount = () => (countEl.textContent = arr.length ? `Photo (${arr.length})` : 'Photo');
@@ -387,7 +452,14 @@ function photoWidget(arr, label) {
     thumbs.innerHTML = '';
     for (const id of arr) {
       const u = await photoUrl(id); if (!u) continue;
-      thumbs.append(h('img', { src: u, alt: 'photo', onclick: () => openPhoto(id, arr, () => { draw(); btnCount(); }) }));
+      const rec = await DB.get('photos', id);
+      const file = rec?.blob ? toFile(rec.blob, photoFileName(id, S.insp, S.entity)) : null;
+      thumbs.append(h('div', { class: 'thumbwrap' },
+        h('img', { src: u, alt: 'photo', onclick: () => openPhoto(id, arr, () => { draw(); btnCount(); }) }),
+        file ? h('button', { type: 'button', class: 'thumbsave', 'data-save-photo': id, onclick: ev => {
+          ev.stopPropagation();
+          saveFiles([file]).then(r => r === 'downloaded' && toast('Photo downloaded')).catch(e => toast('Could not save: ' + (e?.message || e), 3500));
+        } }, 'Save') : null));
     }
   }
   draw();
@@ -399,8 +471,13 @@ async function openPhoto(id, arr, after) {
   const m = document.getElementById('modal');
   const cap = h('input', { type: 'text', placeholder: 'Caption (shows in the report)', value: p.caption || '', oninput: async e => { p.caption = e.target.value; await DB.put('photos', p); } });
   m.innerHTML = '';
+  const file = toFile(p.blob, photoFileName(id, S.insp, S.entity));
+  const saveBtn = h('button', { type: 'button', class: 'btn teal', id: 'savePhotoBtn', onclick: () => {
+    saveFiles([file]).then(r => r === 'downloaded' && toast('Photo downloaded')).catch(e => toast('Could not save: ' + (e?.message || e), 3500));
+  } }, '\u2B07 Save to camera roll');
   m.append(h('div', { class: 'sheet' },
     h('img', { src: await photoUrl(id), alt: '' }),
+    saveBtn,
     h('div', { class: 'small muted', style: 'margin:8px 0' }, p.label || ''),
     h('label', { class: 'f' }, h('span', {}, 'Caption'), cap),
     h('div', { class: 'row2' },
@@ -457,6 +534,7 @@ async function viewInspect(id) {
   // General / unassigned photos (from bulk sorting or added here); they appear in the report's photo section.
   insp.generalPhotos ||= [];
   const gp = photoWidget(insp.generalPhotos, 'General');
+  $view.append(saveAllButton(insp, ent));
   $view.append(h('div', { class: 'card', id: 'generalPhotos' }, h('div', { style: 'font-weight:700' }, 'General photos'),
     h('div', { class: 'small muted' }, 'Not tied to a checklist item. Included in the report.'), h('div', { class: 'acts' }, gp.button), gp.thumbs, gp.file));
 
@@ -606,6 +684,7 @@ async function viewReport(id) {
     const file = new File([blob], name, { type: 'application/pdf' });
     if (navigator.canShare({ files: [file] })) navigator.share({ files: [file], title: name }).catch(() => {}); else downloadBlob(blob, name);
   } }, 'Share PDF (email, text, Drive…)'));
+  $view.append(saveAllButton(insp, ent));
   $view.append(h('div', { class: 'row2' },
     h('button', { class: 'btn secondary', id: 'csvBtn', onclick: () => exportActionCsv([{ insp, ent }], `${fileSafe(ent.name)} - ${def.name} Action Items - ${insp.fields.date}.csv`) }, 'Action items CSV'),
     h('button', { class: 'btn secondary', onclick: () => (location.hash = '#/i/' + insp.id) }, 'Edit')));
